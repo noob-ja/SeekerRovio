@@ -10,13 +10,10 @@ Classes:
 Updated by Tristan Hearn (2013), tristanhearn@gmail.com
 """
 
-import rovio_api
+from .rovio_video import ipCamera
+from . import rovio_api
 import math
 import time
-try:
-    from rovio_video import ipCamera
-except:
-    ipCamera = None
 
 class Rovio:
 

@@ -1,13 +1,16 @@
-from lib import Rovio
+from lib import rovio
 import numpy as np
 import time
-import urllib2
+from imgProcessing import process
+import cv2
+import matplotlib.pyplot as plt
 
-class rovioTest(object):
-    def __init__(self,url, username, password, port = 80):
-        self.rovio = Rovio(url,username=username,password=password,port = port)
+class movementAlgorithm(object):
+    def __init__(self, rovio):
+        self.rovio = rovio
         self.last = None
         self.key = 0
+        self.imgprocess = process.RovioDetect()
 
     def move_then_rotate(self):
         for i in range(10):
@@ -15,7 +18,6 @@ class rovioTest(object):
         time.sleep(0.2)
         for i in range(10):
             self.rovio.rotate_left(speed=4)
-            self.downloadImage()
             time.sleep(0.5)
 
     def move_while_rotate(self):
@@ -28,10 +30,9 @@ class rovioTest(object):
         self.movement(self.rovio.forward_left,times=2)
         self.movement(self.rovio.forward,times=2)
 
-    def rotate_left_36(self,times,speed_=4):
+    def rotate_left_36(self,times=1,speed_=4):
         for i in range(times):
             self.rovio.rotate_left(speed=speed_)
-            self.downloadImage()
             time.sleep(0.5)
 
     def no_scope(self):
@@ -44,31 +45,19 @@ class rovioTest(object):
         self.move_more(movement_op)
         time.sleep(0.3)
 
-    def main(self):
-        start = time.time()
-        self.move_while_rotate()
+    def start(self):
+        # self.move_while_rotate()
         # self.move_then_rotate()
-        end = time.time()
-        print(end-start)
-        time.sleep(2)
-
-    pictureVal = 1
-    ip_of_rovio = '192.168.43.134'
-    save_file_path = 'img/'
-
-    def downloadImage(self):
-        url = 'http://'+self.ip_of_rovio+'/Jpeg/CamImg0000.jpg'
-        request = urllib2.Request(url)
-        pic = urllib2.urlopen(request)
-        filePath = self.save_file_path + str(self.pictureVal) + '.jpg'
-        with open(filePath, 'wb') as localFile:
-            localFile.write(pic.read())
-        self.pictureVal += 1
-
-if __name__ == "__main__":
-    url = '192.168.43.134'
-    user = "myname"
-    password = "123456"
-    app = rovioTest(url, user, password)
-    while True:
-        app.main()
+        frame = self.rovio.camera.get_frame()
+        res = self.imgprocess.isRovio(frame)
+        image = cv2.resize(frame,(640,480))
+        if(len(res)==0):
+            self.rotate_left_36()
+        else:
+            res = res[0]
+            cv2.rectangle(image, (res[2], res[3]), (res[2] + res[4], res[3] + res[5]), (255, 0, 0), 2)
+            self.move_more(self.rovio.forward)
+        cv2.imshow('Image',image)
+        cv2.waitKey(20)
+        print(res)
+        # time.sleep(2)

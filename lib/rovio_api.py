@@ -27,7 +27,7 @@ Module Constants:
   - LICENSE
   - USER_AGENT: For use with HTTP requests
   - response_codes: map of response codes to [name, docstring]
-    
+
     Response Code Commands Table
 
     These are returned by many Rovio commands.
@@ -73,7 +73,7 @@ Updated by Tristan Hearn (2013), tristanhearn@gmail.com
 """
 
 import base64
-import urllib2
+import urllib.request as urllib
 import logging
 
 ###############
@@ -260,7 +260,7 @@ class OutOfRangeError(ParamError):
       - param:  parameter name
       - range_: [low, high]
       - value:  attempted input value
-      
+
     """
 
     def __init__(self, rovio, param, range_, value):
@@ -270,7 +270,7 @@ class OutOfRangeError(ParamError):
         self.value = value
 
 class RovioApi:
-    
+
     """
     An instance of the RovioApi class provides an interface to one Rovio.
 
@@ -339,7 +339,7 @@ class RovioApi:
 
     Documentation taken from the API Specification for Rovio, version 1.2,
     October 8, 2008, from WowWee Group Limited.
-    
+
     """
     def __init__(self, host, username=None, password=None, port=80):
         """
@@ -363,10 +363,10 @@ class RovioApi:
     # Class constants
 
     # Data attributes (instance attributes)
-    
+
     def get_protocol(self): return self._protocol
     protocol = property(get_protocol, doc="""Protocol to use (default http)""")
-    
+
     def get_port(self): return self._port
     def set_port(self, value):
         if 0 <= value <= 65535:
@@ -388,7 +388,7 @@ class RovioApi:
                      Rovio's default movement speed.
 
                      1 fastest, 10 slowest (default 1)
-                     
+
                      """)
 
     def get_username(self): return self._username
@@ -412,7 +412,7 @@ class RovioApi:
                              'must be a string or None')
     password = property(get_password, set_password,
                         doc="""HTTP Auth password or None""")
-    
+
     def get_host(self): return self._host
     def set_host(self, value):
         if (isinstance(value, str)):
@@ -422,7 +422,7 @@ class RovioApi:
             raise ParamError(self, 'host', value, 'must be a valid URL string')
     host = property(get_host, set_host,
                     doc="""Hostname or IP address of the Rovio""")
-    
+
     # Movement Controls
 
     def get_report(self):
@@ -619,7 +619,7 @@ class RovioApi:
 
         """
         return self._simple_rev_cmd(7, path_name)
-        
+
     def play_path_backward(self, path_name):
         """
         Replays a stored path from closest point to the beginning.
@@ -849,7 +849,7 @@ class RovioApi:
     def get_data(self):
         """
         Do nothing.
-        
+
         Rovio API documentation on this command is not very good.  Does nothing
         at the moment.
 
@@ -888,7 +888,7 @@ class RovioApi:
           - RedirectURL: undocumented (default None)
 
         Requires administrative privileges on the Rovio.
-        
+
         """
         if RedirectURL is None:
             page = 'ChangeResolution.cgi?ResType=%d' % (ResType,)
@@ -896,7 +896,7 @@ class RovioApi:
             page = ('ChangeResolution.cgi?ResType=%d&RedirectURL=%s' %
                     (ResType, RedirectURL))
         return self._get_request_response(page)
-        
+
     def change_compress_ratio(self, Ratio=1, RedirectURL=None):
         """
         Change the quality setting of camera's images (MPEG only).
@@ -906,7 +906,7 @@ class RovioApi:
           - RedirectURL: undocumented (default None)
 
         Requires administrative privileges on the Rovio.
-        
+
         """
         if RedirectURL is None:
             page = 'ChangeCompressRatio.cgi?Ratio=%d' % (Ratio,)
@@ -914,7 +914,7 @@ class RovioApi:
             page = ('ChangeCompressRatio.cgi?Ratio=%d&RedirectURL=%s' %
                     (Ratio, RedirectURL))
         return self._get_request_response(page)
-        
+
     def change_framerate(self, Framerate=30, RedirectURL=None):
         """
         Change the frame rate of camera's images.
@@ -924,7 +924,7 @@ class RovioApi:
           - RedirectURL: undocumented (default None)
 
         Requires administrative privileges on the Rovio.
-        
+
         """
         if RedirectURL is None:
             page = 'ChangeFramerate.cgi?Framerate=%d' % (Framerate,)
@@ -932,7 +932,7 @@ class RovioApi:
             page = ('ChangeFramerate.cgi?Framerate=%d&RedirectURL=%s' %
                     (Framerate, RedirectURL))
         return self._get_request_response(page)
-        
+
     def change_brightness(self, Brightness=6, RedirectURL=None):
         """
         Change the brightness of camera's images.
@@ -942,7 +942,7 @@ class RovioApi:
           - RedirectURL: undocumented (default None)
 
         Requires administrative privileges on the Rovio.
-        
+
         """
         if RedirectURL is None:
             page = 'ChangeBrightness.cgi?Brightness=%d' % (Brightness,)
@@ -950,7 +950,7 @@ class RovioApi:
             page = ('ChangeBrightness.cgi?Brightness=%d&RedirectURL=%s' %
                     (Brightness, RedirectURL))
         return self._get_request_response(page)
-        
+
     def change_speaker_volume(self, SpeakerVolume=15, RedirectURL=None):
         """
         Change the speaker volume of the Rovio.
@@ -960,7 +960,7 @@ class RovioApi:
           - RedirectURL: undocumented (default None)
 
         Requires administrative privileges on the Rovio.
-        
+
         """
         if RedirectURL is None:
             page = ('ChangeSpeakerVolume.cgi?SpeakerVolume=%d' %
@@ -969,7 +969,7 @@ class RovioApi:
             page = ('ChangeSpeakerVolume.cgi?SpeakerVolume=%d&RedirectURL=%s' %
                     (SpeakerVolume, RedirectURL))
         return self._get_request_response(page)
-        
+
     def change_mic_volume(self, MicVolume=15, RedirectURL=None):
         """
         Change the microphone volume of the Rovio.
@@ -979,7 +979,7 @@ class RovioApi:
           - RedirectURL: undocumented (default None)
 
         Requires administrative privileges on the Rovio.
-        
+
         """
         if RedirectURL is None:
             page = 'ChangeMicVolume.cgi?MicVolume=%d' % (MicVolume,)
@@ -987,7 +987,7 @@ class RovioApi:
             page = ('ChangeMicVolume.cgi?MicVolume=%d&RedirectURL=%s' %
                     (MicVolume, RedirectURL))
         return self._get_request_response(page)
-        
+
     def set_camera(self, Frequency=0, RedirectURL=None):
         """
         Change camera sensor's settings.
@@ -997,7 +997,7 @@ class RovioApi:
           - RedirectURL: undocumented (default None)
 
         Requires administrative privileges on the Rovio.
-        
+
         """
         if RedirectURL is None:
             page = 'SetCamera.cgi?Frequency=%d' % (Frequency,)
@@ -1005,7 +1005,7 @@ class RovioApi:
             page = ('SetCamera.cgi?Frequency=%d&RedirectURL=%s' %
                     (Frequency, RedirectURL))
         return self._get_request_response(page)
-        
+
     def manual_drive(self, command, speed=None, angle=None):
         """
         Send a movement command to the Rovio.
@@ -1093,11 +1093,11 @@ class RovioApi:
 
         """
         url = self._base_url + page
-        req = urllib2.Request(url)
+        req = urllib.Request(url)
         req.add_header('User-Agent', USER_AGENT)
         if self._base64string is not None:
             req.add_header("Authorization", "Basic %s" % self._base64string)
-        f = urllib2.urlopen(req)
+        f = urllib.urlopen(req)
         data = f.read()
         return data;
 
@@ -1117,13 +1117,13 @@ class RovioApi:
         """
         reply = dict()
         # split on | (bar)
-        rlst = response.split('|')
+        rlst = response.split('|'.encode())
         # handle Cmd=... first line specially
         rlst[0:1] = rlst[0].splitlines()
         # split key=val into key,val pairs
         for pair in rlst:
             try:
-                (key,val) = pair.split('=')
+                (key,val) = pair.split('='.encode())
             except ValueError:
                 key = pair
                 val = None
@@ -1138,15 +1138,15 @@ class RovioApi:
                     pass
                 except TypeError:
                     pass
-            reply[key] = val
+            reply[key.decode()] = val
         return reply
 
     def _compile_URLs(self):
         """Compile all URLs for use in _get_request_response."""
         if self._username is not None and self._password is not None:
-            self._base64string = base64.encodestring('%s:%s' %
+            self._base64string = base64.encodestring(('%s:%s' %
                                                      (self._username,
-                                                      self._password))[:-1]
+                                                      self._password)).encode())[:-1]
         else:
             self._base64string = None
         self._base_url = '%s://%s:%d/' % (self._protocol, self._host,
