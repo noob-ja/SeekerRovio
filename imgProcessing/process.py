@@ -126,6 +126,7 @@ class RovioDetect(object):
             bounds['ref_left']  = [bounds['xmin'],bounds['ymax']]
             bounds['ref_right'] = [bounds['xmax'],bounds['ymax']]
             bounds['ref_center_true'] = [center['x'],center['y']]
+            bounds['area'] = w * h
             location.append(bounds)
 
         location_nearest = None
@@ -160,11 +161,28 @@ class RovioDetect(object):
             location_nearest['direction'] = -1
         else:
             location_nearest['direction'] = 0       # rovio at front
+
+        '''
+        location_nearest = [
+        {
+        'area': Area of rovio,
+        'ref_center': Bottom center point,
+        'ref_left': Bottom left corner,
+        'ref_right': Bottom right corner,
+        'ref_center_true': Center of rovio detected
+        'direction': Direction of rovio detected
+        }
+        ]
+        '''
         return location_nearest
 
 class ObstacleDetect(object):
-    def __init__(self, bound=20):
+    def __init__(self, bound=20, screen_height=480, screen_width=640):
         self.bound = bound
+        self.screen_height = screen_height
+        self.screen_width = screen_width
+        self.screen_height_h = self.screen_height/2
+        self.screen_width_h = self.screen_width/2
 
     def preprocess_image(self,frame):
         # frame = cv2.imread(frame)
@@ -189,6 +207,53 @@ class ObstacleDetect(object):
         return final_result
 
     def __call__(self,frame):
-        processed_frame = preprocess_image(frame)
+        processed_frame = self.preprocess_image(frame)
+        img, cont, h = cv2.findContours(processed_frame.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+        obs = []
+        for contour in cont:
+            area = cv2.contourArea(contour)
+            if (area > 8000):
+                # draw the contour
+                cv2.drawContours(frame, contour, contourIdx=-1, color=(255, 0, 0), thickness=2, maxLevel=1)
+                # draw the bounding rectangle
+                x, y, w, h = cv2.boundingRect(contour)
+                f = cv2.rectangle(frame, (x, y), (x + w, y + h), (0, 255, 0), 2)
+                cv2.putText(f, "Obstacle", (x + 10, y - 20), cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 0, 255), 1)
+                # finding the corners
+                corners = cv2.approxPolyDP(contour, 0.05 * cv2.arcLength(contour, True), True)
+                ref_corners = []
+                # display points found
+                for corner in corners:
+                    rx = corner[0][0]
+                    ry = corner[0][1]
+                    ref_corners.append(corner[0])
+                    cv2.circle(f, (rx, ry), 5, 0, -1)
+                    cv2.putText(f, ('(' + str(rx) + ',' + str(ry) + ')'), (rx - 40, ry + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 1, True)
+                # sort by left and right, and just take bottom points
+                ref_corners = sorted(sorted(ref_corners, key=(lambda x: x[1]))[-2:], key=(lambda x:x[0]))
+                ref_left = [ref_corners[0][0], ref_corners[0][1]]
+                ref_right = [ref_corners[1][0], ref_corners[1][1]]
+                ref_center = [int((ref_left[0] + ref_right[0]) / 2), int((ref_left[1] + ref_right[1]) / 2)]
+                # determining the direction of obstacle
+                if ref_left[0] > self.screen_width_h:
+                    direction = 1
+                elif ref_left[0] < self.screen_width_h:
+                    direction = -1
+                else:
+                    direction = 0
 
+                '''
+                obs json = [
+                {
+                'area': Area of obstacle,
+                'ref_center': Bottom center point,
+                'ref_left': Bottom left corner,
+                'ref_right': Bottom right corner,
+                'direction': Direction of obstacle detected
+                }
+                ]
+                '''
+                obs.append({'area': area, 'ref_center': ref_center, 'ref_left': ref_left, 'ref_right': ref_right, 'direction': direction})
+        if len(obs) != 0:
+            return obs
         return 'no obstacle'
