@@ -21,6 +21,8 @@ class movementAlgorithm(object):
         self.obs_json_ = {'direction':-2}
         self.obs_found = False
 
+        self.movements = []
+
     def move_then_rotate(self):
         for i in range(10):
             self.rovio.forward(speed=1)
@@ -46,18 +48,22 @@ class movementAlgorithm(object):
     #     self.rotate_left_36(times)
     #     self.move_more(movement_op)
     #     time.sleep(0.3)
-
-    def rotate_left(self,times=1,speed_=4):
+    def rotate_left(self,times=1,speed_=4,angle=None):
+        if not angle is None:
+            times = int(angle/36)
         for i in range(times):
+            self.movements.append(self.rovio.rotate_left.__name__)
             self.rovio.rotate_left(speed=speed_)
             time.sleep(0.5)
 
-    def rotate_right(self, times=1,speed_=4):
+    def rotate_right(self, times=1,speed_=4,angle=None):
         for i in range(times):
+            self.movements.append(self.rovio.rotate_right.__name__)
             self.rovio.rotate_right(speed=speed_)
             time.sleep(0.5)
 
     def move_more(self, movement_op, times=5, speed_=1):
+        self.movements.append(movement_op.__name__)
         for i in range(times): movement_op(speed=speed_)
         time.sleep(0.3)
 
@@ -82,6 +88,18 @@ class movementAlgorithm(object):
         while True:
             # self.chase()
             self.search()
+            print(self.movements)
+            if len(self.movements)>0: print(self.get_reverse_movement(self.movements[-1]))
+
+    def get_reverse_movement(self, movement):
+        return {
+            'rotate_left': self.rotate_right,
+            'rotate_right': self.rotate_left,
+            'forward': self.move_backward,
+            'backward': self.move_forward,
+            'left': self.move_right,
+            'right': self.move_left
+        }.get(movement, None)
 
     def get_frame(self):
         if self.debug:
@@ -90,9 +108,9 @@ class movementAlgorithm(object):
         while self.frame is None:
             self.frame = self.rovio.camera.get_frame()
         self.rovio_json = self.rovioDet(self.frame)
-        self.rovio_found = !isinstance(self.rovio_json, str)
+        self.rovio_found = not isinstance(self.rovio_json, str)
         self.obs_json = self.obsDet(self.frame)
-        self.obs_found = !isinstance(self.obs_json, str)
+        self.obs_found = not isinstance(self.obs_json, str)
         if self.frame is not None:
             cv2.imshow('Live', self.frame)
         # if self.rovioDet.processed_frame is not None:
@@ -146,35 +164,57 @@ class movementAlgorithm(object):
 
     def search(self):
         self.get_frame()
-        ref_obs, ref_obs_direction = self.get_ref(self.obs_json, get_nearest=True)
-        if ref_obs_direction == 1:
-            self.move_forward()
-        elif ref_obs_direction == -1:
-            self.move_forward()
-        elif ref_obs_direction == -2:
-            if self.debug: print('no obstacle found')
-            self.find()
+        if self.rovio_found:
+            # init chasing sequence
+            print('')
         else:
-            if self.debug: print('facing obstacle')
-        self.obs_json_ = self.obs_json
+            if not self.obs_found:
+                if self.debug: print('no obstacle found')
+                obs_json = self.find()
+                if obs_json is None:
+                    if self.debug: print('still no obstacle found')
+                    return ''
+                else:
+                    obs_json = self.obs_json
+            obs_json = self.obs_json
+            ref_obs, ref_obs_direction = self.get_ref(obs_json, get_nearest=True)
+            if ref_obs_direction == 1:    # obstacle on the right
+                self.move_forward()
+            elif ref_obs_direction == -1:   # obstacle on the left
+                self.move_forward()
+            else:
+                if self.debug: print('facing obstacle')
+        self.obs_json_ = obs_json
 
     def find(self):
         self.get_frame()
         angle = 0
+        obs_found = []
+        # rotate and look for obs or rovio
         while angle<360:
-
-            if !isinstance(self.rovio_json,str):
+            if self.rovio_found:
                 if self.debug: print('found rovio at angle ', angle)
                 break
-            if !isinstance(self.obs_json, str):
+            if self.obs_found:
                 if self.debug: print('found obstacle at angle ', angle)
+                self.obs_json[0]['angle'] = angle
+                obs_found += self.obs_json
             self.rotate_left()
             angle += 36
             self.get_frame()
 
-        if angle >= 360:
+        if not (self.rovio_found or len(obs_found) > 0):
             if self.debug: print('rotated 360 degree, cannot find anything')
-            return False
+            return None
         else:
-            if self.debug: print('found at angle ',angle)
-            return True
+            if self.debug: print('found obs: ',obs_found)
+            nearest_obs = {'area':-1, 'angle':0}
+            for obs_ in obs_found:
+                if obs_['area'] > nearest_obs['area']:
+                    nearest_obs = obs_
+            turn_angle = nearest_obs['angle']
+            if angle<=180:
+                self.rotate_left(angle=angle)
+            else:
+                self.rotate_right(angle=angle-180)
+            return nearest_obs
