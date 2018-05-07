@@ -230,10 +230,12 @@ class ObstacleDetect(object):
                     cv2.circle(f, (rx, ry), 5, 0, -1)
                     cv2.putText(f, ('(' + str(rx) + ',' + str(ry) + ')'), (rx - 40, ry + 15), cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 0), 1, True)
                 # sort by left and right, and just take bottom points
-                ref_corners = sorted(sorted(ref_corners, key=(lambda x: x[1]))[-2:], key=(lambda x:x[0]))
-                ref_left = [ref_corners[0][0], ref_corners[0][1]]
-                ref_right = [ref_corners[1][0], ref_corners[1][1]]
+                ref_corners = sorted(ref_corners, key=(lambda x: [x[1],x[0]]))
+                print(ref_corners)
+                ref_left = [ref_corners[-2][0], ref_corners[-2][1]]
+                ref_right = [ref_corners[-1][0], ref_corners[-1][1]]
                 ref_center = [int((ref_left[0] + ref_right[0]) / 2), int((ref_left[1] + ref_right[1]) / 2)]
+                ref_center_true = [ref_center[0], int((ref_corners[-2][1]-ref_corners[0][1])/2)]
                 # determining the direction of obstacle
                 if ref_left[0] > self.screen_width_h:
                     direction = 1
@@ -247,13 +249,14 @@ class ObstacleDetect(object):
                 {
                 'area': Area of obstacle,
                 'ref_center': Bottom center point,
+                'ref_center_true': True center point of the obstacle
                 'ref_left': Bottom left corner,
                 'ref_right': Bottom right corner,
                 'direction': Direction of obstacle detected
                 }
                 ]
                 '''
-                obs.append({'area': area, 'ref_center': ref_center, 'ref_left': ref_left, 'ref_right': ref_right, 'direction': direction})
+                obs.append({'area': area, 'ref_center': ref_center,'ref_center_true': ref_center_true, 'ref_left': ref_left, 'ref_right': ref_right, 'direction': direction})
         if len(obs) != 0:
             return obs
         return 'no obstacle'

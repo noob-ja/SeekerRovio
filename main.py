@@ -8,7 +8,11 @@ class rovioControl:
         self.last = None
         self.key = 0
 
+    def reset(self):
+        self.rovio.head_down()
+
     def main(self):
+        self.reset()
         move = movementAlgorithm(self.rovio)
         move.start()
 
