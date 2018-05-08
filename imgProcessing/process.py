@@ -69,6 +69,11 @@ class RovioDetect(object):
 
         # 3: Compile the model so that Keras won't complain the next time you load it.
         adam = Adam(lr=0.001, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=5e-04)
+            # nearest_obs = {'area':-1, 'angle':0}
+            # for obs_ in obs_found:
+            #     if obs_['area'] > nearest_obs['area']:
+            #         nearest_obs = obs_
+            # turn_angle = nearest_obs['angle']
         ssd_loss = SSDLoss(neg_pos_ratio=3, n_neg_min=0, alpha=1.0)
         self.model.compile(optimizer=adam, loss=ssd_loss.compute_loss)
 

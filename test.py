@@ -15,8 +15,8 @@
 # cv2.imshow('obs',frame)
 # cv2.waitKey(10000)
 
-def a():
-    return 1,2,3
 
-x,y,_ = a()
-print(x,y)
+a = [0,1,2,3]
+print(a)
+a = a[:-1]
+print(a)

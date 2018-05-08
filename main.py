@@ -1,6 +1,6 @@
 from lib import rovio
 import numpy as np
-from movement import movementAlgorithm
+from search import SearchingAlgorithm
 
 class rovioControl:
     def __init__(self,url, username=None, password=None, port = 80):
@@ -13,8 +13,8 @@ class rovioControl:
 
     def main(self):
         self.reset()
-        move = movementAlgorithm(self.rovio)
-        move.start()
+        search = SearchingAlgorithm(self.rovio)
+        search.start()
 
 if __name__ == "__main__":
     url = '192.168.43.134'

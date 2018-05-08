@@ -30,6 +30,7 @@ class ipCamera(object):
             except Exception as e:
                 print('Error')
 
-    def get_frame(self):
+    def get_frame(self,img_width=640, img_height=480):
         frame = self.curr_frame.copy() if self.curr_frame is not None else None
+        frame = cv2.resize(frame, (img_width, img_height))
         return frame
