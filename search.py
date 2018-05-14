@@ -8,7 +8,8 @@ from movement import Movement
 class SearchingAlgorithm(object):
     def start(self):
         while True:
-            cv2.waitKey(0)
+            print("Waiting for key input")
+            a = input()
             self.moving()
 
     def __init__(self, rovio,debug=True):
@@ -27,6 +28,8 @@ class SearchingAlgorithm(object):
         self.obs_json = None
         self.obs_json_ = {'direction':-2}
         self.obs_found = False
+
+        self.lost = False
 
         self.delay = 1
         self.screen_width = 640
@@ -206,8 +209,8 @@ class SearchingAlgorithm(object):
         if self.debug:
             print('________________________')
             print('Moving towards: ',object)
-        move_stop = 50
-        move_near = 100
+        move_stop = 100
+        move_near = 150
         while True:
             self.object_center(object=object, get_nearest=get_nearest)
             self.get_frame()
@@ -215,6 +218,7 @@ class SearchingAlgorithm(object):
             _,_, obj_json = self.get_ref(json,get_nearest=get_nearest)
             if isinstance(obj_json, int):
                 if self.debug: print('lost target')
+                self.lost = True
                 # self.move.move_undo()
                 return False
             obj_dist_btm, obj_dist_center = self.calc_dist(json=obj_json, object=object)
@@ -283,6 +287,7 @@ class SearchingAlgorithm(object):
                 # move left once, right once
                 if self.moving_direction: self.move.move_left_straight()
                 else: self.move.move_right_straight()
+                self.move.move_backward_less()
                 moved += 1
             return 0
     '''
@@ -293,8 +298,13 @@ class SearchingAlgorithm(object):
         self.moving_direction = True    # True = left, False = right
         get_nearest = True
         while True:
+            self.lost = False
             self.search(partial=3, get_nearest=get_nearest)
-            if self.rovio_found:
+            if self.rovio_found and not self.lost:
                 print('Aww yeah')
-                break
+                self.chase()
+                if self.lost:
+                    continue
+                print("WAITING FOR INPUT~~~~~")
+                a = input()
             get_nearest = False
