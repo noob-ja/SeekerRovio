@@ -97,7 +97,7 @@ class RovioDetect(object):
         input_images = np.array(input_images)
 
         y_pred = self.model.predict(input_images)
-        confidence_threshold = 0.5
+        confidence_threshold = 0.7
         y_pred_thresh = [y_pred[k][y_pred[k,:,1] > confidence_threshold] for k in range(y_pred.shape[0])]
 
         # calculations on the bounds of the rovio detected
@@ -217,7 +217,7 @@ class ObstacleDetect(object):
         obs = []
         for contour in cont:
             area = cv2.contourArea(contour)
-            if (area > 8000):
+            if (area > 6000):
                 # draw the contour
                 cv2.drawContours(frame, contour, contourIdx=-1, color=(255, 0, 0), thickness=2, maxLevel=1)
                 # draw the bounding rectangle
@@ -242,9 +242,9 @@ class ObstacleDetect(object):
                 ref_center = [int((ref_left[0] + ref_right[0]) / 2), int((ref_left[1] + ref_right[1]) / 2)]
                 ref_center_true = [ref_center[0], int((ref_corners[-2][1]-ref_corners[0][1])/2)]
                 # determining the direction of obstacle
-                if ref_left[0] > self.screen_width_h:
+                if ref_center[0] > self.screen_width_h:
                     direction = 1
-                elif ref_left[0] < self.screen_width_h:
+                elif ref_center[0] < self.screen_width_h:
                     direction = -1
                 else:
                     direction = 0

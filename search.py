@@ -8,6 +8,7 @@ from movement import Movement
 class SearchingAlgorithm(object):
     def start(self):
         while True:
+            cv2.waitKey(0)
             self.moving()
 
     def __init__(self, rovio,debug=True):
@@ -92,6 +93,16 @@ class SearchingAlgorithm(object):
                 ret_json = json
             return ret_ref, direction, ret_json
 
+    def avoidObs(self):
+        self.get_frame()
+        if self.rovio_found and self.obs_found:
+            rovio_ref, rovio_dir, rovio_json = self.get_ref(self.rovio_json)
+            obs_ref, obs_dir, obs_json = self.get_ref(self.obs_json)
+            if rovio_ref[1] < obs_ref[1]:
+                if obs_dir == 1:
+                    self.move.move_left_straight()
+                else: self.move.move_right_straight()
+
     def chase(self):
         self.get_frame()
         if self.rovio_json == 'no rovio':
@@ -102,6 +113,7 @@ class SearchingAlgorithm(object):
             else:
                 self.rovio.backward()
         else:
+            self.avoidObs()
             self.move_towards('rovio')
 
     def object_center(self, object, get_nearest=True):
@@ -117,7 +129,6 @@ class SearchingAlgorithm(object):
                 json = self.obs_json
             ret_ref, direction, ret_json = self.get_ref(json, get_nearest=get_nearest)
             obj_center = abs(ret_ref[0] - self.screen_width_h)
-            print(ret_ref[0], obj_center)
             if obj_center > 200:
                 if direction==1: self.move.rotate_right(speed_=6)
                 else: self.move.rotate_left(speed_=6)
@@ -132,16 +143,16 @@ class SearchingAlgorithm(object):
             self.chase()
             print('')
         else:
-            if not self.obs_found:
-                if self.debug: print('no obstacle found')
-                obs_json = self.find(get_nearest)
-                if obs_json is False:
-                    if self.debug: print('still no obstacle found')
-                    # begin traceback operation
-                    return ''
-                elif obs_json is True:
-                    # found rovio
-                    return ''
+            # if not self.obs_found:
+            if self.debug: print('no obstacle found')
+            obs_json = self.find(get_nearest)
+            if obs_json is False:
+                if self.debug: print('still no obstacle found')
+                # begin traceback operation
+                return ''
+            elif obs_json is True:
+                # found rovio
+                return ''
             ref_obs, ref_obs_direction,_ = self.get_ref(obs_json, get_nearest=get_nearest)
             if ref_obs_direction == 1:    # obstacle on the right
                 self.move_around(object='obstacle',times=partial, get_nearest=get_nearest)
@@ -204,13 +215,13 @@ class SearchingAlgorithm(object):
             _,_, obj_json = self.get_ref(json,get_nearest=get_nearest)
             if isinstance(obj_json, int):
                 if self.debug: print('lost target')
-                self.move.move_undo()
-                break
+                # self.move.move_undo()
+                return False
             obj_dist_btm, obj_dist_center = self.calc_dist(json=obj_json, object=object)
             print(object,'_dist_btm: ', obj_dist_btm)
             print(object,'_dist_center: ', obj_dist_center)
             if obj_dist_btm < move_stop and obj_dist_center < move_stop:
-                break
+                return True
             elif obj_dist_btm < move_near or obj_dist_center < move_near:
                 self.move.move_forward_less()
             else:
@@ -225,7 +236,8 @@ class SearchingAlgorithm(object):
             print('@@@@@@@@@@@@@@@@@@@@@@@@@@@@')
             print('Moving around: ',object)
         if object=='obstacle':
-            self.move_towards(object=object,get_nearest=get_nearest)
+            if not self.move_towards(object=object,get_nearest=get_nearest):
+                return ''
             for i in range(times):
                 if self.move_pass()==1:
                     break    # move pass rovio
@@ -234,6 +246,9 @@ class SearchingAlgorithm(object):
                 self.get_frame()
                 if self.rovio_found: break
                 else: self.move.move_forward()
+
+                if i == times-1:
+                    break
 
                 if self.moving_direction: self.move.rotate_right_90()
                 else: self.move.rotate_left_90()
@@ -248,7 +263,8 @@ class SearchingAlgorithm(object):
     def move_pass(self, object='obstacle',direction='left'):
         if object=='obstacle':
             found = False
-            while True:
+            moved = 0
+            while moved < 3:
                 ignore = False
                 self.get_frame()
                 if self.rovio_found: return 1  # found rovio
@@ -267,6 +283,7 @@ class SearchingAlgorithm(object):
                 # move left once, right once
                 if self.moving_direction: self.move.move_left_straight()
                 else: self.move.move_right_straight()
+                moved += 1
             return 0
     '''
     proposed movement algorithm
@@ -276,7 +293,7 @@ class SearchingAlgorithm(object):
         self.moving_direction = True    # True = left, False = right
         get_nearest = True
         while True:
-            self.search(partial=2, get_nearest=get_nearest)
+            self.search(partial=3, get_nearest=get_nearest)
             if self.rovio_found:
                 print('Aww yeah')
                 break

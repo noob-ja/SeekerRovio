@@ -72,7 +72,7 @@ class Movement(object):
     def move_forward(self):
         self.move_more(self.rovio.forward)
     def move_forward_less(self):
-        self.move_more(self.rovio.forward, times=1)
+        self.move_more(self.rovio.forward, times=3)
 
     def move_backward(self):
         self.move_more(self.rovio.backward)
